@@ -11,9 +11,20 @@ Data points far from the boundary can be considered "easy to classify" and achie
 ## Example code for Early Exit
 Both CIFAR10 and Imagenet code comes directly from publically available examples from Pytorch. The only edits are the exits that are inserted in a methodology similar to BranchyNet work.
 
+**Note:** the sample code provided for Resnet models with Early Exits has exactly one early exit for the CIFAR10 example and exactly two early exits for the Imagenet example. If you want to modify the number of early exits, you will need to make sure that the model code is updated to have a corresponding number of exits.
+
 Deeper networks can benefit from multiple exits. Our examples illustrate both a single and a pair of early exits for CIFAR10 and Imagenet, respectively.
 
 Note that this code does not actually take exits. What it does is to compute statistics of loss and accuracy assuming exits were taken when criteria are met. Actually implementing exits can be tricky and architecture dependent and we plan to address these issues.
+
+### Example command lines
+We have provided examples for Resnets of varying sizes for both CIFAR10 and Imagenet datasets. An example command line for training for CIFAR10 is:
+
+```python compress_classifier.py --arch=resnet32_cifar_earlyexit --epochs=20 -b 128 --lr=0.003 --earlyexit_thresholds 0.4 --earlyexit_lossweights 0.4 -j 30 --out-dir /home/ -n earlyexit /home/pcifar10 &```
+
+And an example command line for Imagenet is:
+
+```python compress_classifier.py --arch=resnet50_earlyexit --epochs=120 -b 128 --lr=0.003 --earlyexit_thresholds 1.2 0.9 --earlyexit_lossweights 0.1 0.3 -j 30 --out-dir /home/ -n earlyexit /home/I1K/i1k-extracted/ &```
 
 ### Heuristics
 The insertion of the exits are ad-hoc, but there are some heuristic principals guiding their placement and parameters. The earlier exits are placed, the more agressive the exit as it essentially prunes the rest of the network at a very early stage, thus saving a lot of work. However, a diminishing percentage of data will be directed through the exit if we are to preserve accuracy.
