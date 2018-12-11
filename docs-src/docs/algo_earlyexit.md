@@ -11,9 +11,20 @@ Data points far from the boundary can be considered "easy to classify" and achie
 ## Example code for Early Exit
 Both CIFAR10 and ImageNet code comes directly from publically available examples from Pytorch. The only edits are the exits that are inserted in a methodology similar to BranchyNet work.
 
+**Note:** the sample code provided for Resnet models with Early Exits has exactly one early exit for the CIFAR10 example and exactly two early exits for the Imagenet example. If you want to modify the number of early exits, you will need to make sure that the model code is updated to have a corresponding number of exits.
+
 Deeper networks can benefit from multiple exits. Our examples illustrate both a single and a pair of early exits for CIFAR10 and ImageNet, respectively.
 
 Note that this code does not actually take exits. What it does is to compute statistics of loss and accuracy assuming exits were taken when criteria are met. Actually implementing exits can be tricky and architecture dependent and we plan to address these issues.
+
+### Example command lines
+We have provided examples for Resnets of varying sizes for both CIFAR10 and Imagenet datasets. An example command line for training for CIFAR10 is:
+
+```python compress_classifier.py --arch=resnet32_cifar_earlyexit --epochs=20 -b 128 --lr=0.003 --earlyexit_thresholds 0.4 --earlyexit_lossweights 0.4 -j 30 --out-dir /home/ -n earlyexit /home/pcifar10 &```
+
+And an example command line for Imagenet is:
+
+```python compress_classifier.py --arch=resnet50_earlyexit --epochs=120 -b 128 --lr=0.003 --earlyexit_thresholds 1.2 0.9 --earlyexit_lossweights 0.1 0.3 -j 30 --out-dir /home/ -n earlyexit /home/I1K/i1k-extracted/ &```
 
 ### Heuristics
 The insertion of the exits are ad-hoc, but there are some heuristic principals guiding their placement and parameters. The earlier exits are placed, the more agressive the exit as it essentially prunes the rest of the network at a very early stage, thus saving a lot of work. However, a diminishing percentage of data will be directed through the exit if we are to preserve accuracy.
@@ -27,6 +38,9 @@ There are two parameters that are required to enable early exit. Leave them unde
 thresholds for each of the early exits. The cross entropy measure must be **less than** the specified threshold to take a specific exit, otherwise the data continues along the regular path. For example, you could specify "--earlyexit_thresholds 0.9 1.2" and this implies two early exits with corresponding thresholds of 0.9 and 1.2, respectively to take those exits.
 
 1. **--earlyexit_lossweights** provide the weights for the linear combination of losses during training to compute a signle, overall loss. We only specify weights for the early exits and assume that the sum of the weights (including final exit) are equal to 1.0. So an example of "--earlyexit_lossweights 0.2 0.3" implies two early exits weighted with values of 0.2 and 0.3, respectively and that the final exit has a value of 1.0-(0.2+0.3) = 0.5. Studies have shown that weighting the early exits more heavily will create more agressive early exits, but perhaps with a slight negative effect on accuracy.
+
+### Output Stats
+The example code outputs various statistics regarding the loss and accuracy at each of the exits. During training, the Top1 and Top5 stats represent the accuracy should all of the data be forced out that exit (in order to compute the loss at that exit). During inference (i.e. validation and test stages), the Top1 and Top5 stats represent the accuracy for those data points that could exit because the calculated entropy at that exit was lower than the specified threshold for that exit.
 
 ### CIFAR10
 In the case of CIFAR10, we have inserted a single exit after the first full layer grouping. The layers on the exit path itself includes a convolutional layer and a fully connected layer. If you move the exit, be sure to match the proper sizes for inputs and outputs to the exit layers.
